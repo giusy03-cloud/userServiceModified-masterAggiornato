@@ -35,23 +35,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
+            System.out.println("Token ricevuto: " + token);
 
             if (jwtUtil.validateToken(token)) {
                 String username = jwtUtil.extractUsername(token);
+                System.out.println("Username estratto dal token: " + username);
+
                 UsersAccounts user = usersAccountsService.getUserByUsername(username);
-
-                if (user != null) {
-                    String role = user.getRole();
-                    List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
-
-                    UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                            username, null, authorities
-                    );
+                if (user == null) {
+                    System.out.println("Utente NON trovato nel DB per username: " + username);
+                } else {
+                    System.out.println("Utente trovato: " + user.getUsername() + ", ruolo: " + user.getRole());
+                    // Imposta l'autenticazione nel SecurityContext
+                    List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole()));
+                    UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(username, null, authorities);
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 }
+            } else {
+                System.out.println("Token non valido");
             }
-            // Se il token è presente ma non valido, puoi opzionalmente loggare o gestire errori, ma lascia passare la richiesta
         }
+
 
         // Se manca il token, lascia passare (permetti ad altre configurazioni di decidere)
         filterChain.doFilter(request, response);

@@ -1,13 +1,20 @@
 package it.unical.tickettwo.userservice.controller;
 
 import it.unical.tickettwo.userservice.domain.UsersAccounts;
+import it.unical.tickettwo.userservice.dto.UsersAccountsDTO;
+import it.unical.tickettwo.userservice.repository.UsersAccountsRepository;
 import it.unical.tickettwo.userservice.service.UsersAccountsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.oauth2.jwt.Jwt;
+
 
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +27,9 @@ public class UsersAccountsController {
 
     @Autowired
     private UsersAccountsService usersAccountsService;
+
+    @Autowired
+    private UsersAccountsRepository usersAccountsRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -42,6 +52,42 @@ public class UsersAccountsController {
 
         return usersAccountsService.registerUser(user, passwordEncoder);
     }
+
+
+    @GetMapping("/me/oauth")
+    public ResponseEntity<?> getLoggedOAuthUser(Authentication authentication) {
+        if (authentication == null || !(authentication.getPrincipal() instanceof OAuth2User)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Utente non autenticato tramite Google");
+        }
+
+        OAuth2User user = (OAuth2User) authentication.getPrincipal();
+        return ResponseEntity.ok(user.getAttributes());
+    }
+
+
+    @GetMapping("/hello/oauth")
+    public ResponseEntity<String> helloOAuthUser(Authentication authentication) {
+        System.out.println("Autenticazione: " + authentication);
+        if (authentication == null || !(authentication.getPrincipal() instanceof OAuth2User)) {
+            System.out.println("Utente non autenticato o non OAuth2User");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Utente non autenticato");
+        }
+        OAuth2User user = (OAuth2User) authentication.getPrincipal();
+        System.out.println("Attributi utente OAuth2: " + user.getAttributes());
+        String name = user.getAttribute("name");
+        System.out.println("Nome utente: " + name);
+        return ResponseEntity.ok("Ciao " + name + "!");
+    }
+    @GetMapping("/test")
+    public ResponseEntity<String> testEndpoint() {
+        System.out.println("Test endpoint raggiunto!");
+        return ResponseEntity.ok("Test OK");
+    }
+
+
+
+
+
 
 
 
@@ -112,5 +158,40 @@ public class UsersAccountsController {
         UsersAccounts savedUser = usersAccountsService.registerUser(updatedUser, passwordEncoder);
         return ResponseEntity.ok(savedUser);
     }
+
+    @GetMapping("/{id}/exists")
+    public ResponseEntity<Boolean> checkUserExists(@PathVariable Long id) {
+        boolean exists = usersAccountsService.getUserById(id).isPresent();
+        return ResponseEntity.ok(exists);
+    }
+
+
+
+
+    @GetMapping("/me")
+    public ResponseEntity<UsersAccountsDTO> getCurrentUser(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String username = authentication.getName();  // username estratto dal token
+        UsersAccounts user = usersAccountsService.getUserByUsername(username);
+
+        if (user == null) {
+            throw new UsernameNotFoundException("Utente non trovato");
+        }
+
+        UsersAccountsDTO dto = new UsersAccountsDTO(
+                user.getId(),
+                user.getName(),
+                user.getUsername(),
+                user.getRole(),
+                user.getAccessType()
+        );
+
+        return ResponseEntity.ok(dto);
+    }
+
+
 
 }

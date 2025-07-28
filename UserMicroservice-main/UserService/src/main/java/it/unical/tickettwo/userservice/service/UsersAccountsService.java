@@ -92,6 +92,10 @@ public class UsersAccountsService {
 
 
 
+    // ⬇️ AGGIUNGI QUESTO METODO
+    public UsersAccounts save(UsersAccounts user) {
+        return usersAccountsRepository.save(user);
+    }
 
     public UsersAccounts getUserByUsername(String username) {
         return usersAccountsRepository.findByUsername(username);
