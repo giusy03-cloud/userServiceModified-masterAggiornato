@@ -193,5 +193,40 @@ public class UsersAccountsController {
     }
 
 
+    @GetMapping("/me/name")
+    public ResponseEntity<String> getCurrentUserName(Authentication authentication) {
+        System.out.println("Authentication object: " + authentication);
+        if (authentication == null || !authentication.isAuthenticated()) {
+            System.out.println("Utente non autenticato o token mancante");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String username = authentication.getName();
+        System.out.println("Username estratto: " + username);
+        UsersAccounts user = usersAccountsService.getUserByUsername(username);
+
+        if (user == null) {
+            System.out.println("Utente non trovato nel DB");
+            return ResponseEntity.notFound().build();
+        }
+
+        System.out.println("Nome utente: " + user.getName());
+        return ResponseEntity.ok(user.getName());
+    }
+
+    @GetMapping("/{id}/name")
+    public ResponseEntity<String> getUserNameById(@PathVariable Long id) {
+        Optional<UsersAccounts> userOpt = usersAccountsService.getUserById(id);
+
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Utente non trovato");
+        }
+
+        return ResponseEntity.ok(userOpt.get().getName());
+    }
+
+
+
+
 
 }
