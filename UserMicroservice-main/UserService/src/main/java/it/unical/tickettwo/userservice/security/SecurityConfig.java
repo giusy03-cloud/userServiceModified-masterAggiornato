@@ -54,7 +54,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/*/exists").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users").permitAll()
-                        .requestMatchers("/oauth2/**", "/login/**", "/api/users/me/oauth", "/api/users/hello/oauth").permitAll()  // aggiunto hello/oauth
+                        .requestMatchers("/oauth2/**", "/login/**", "/api/users/me/oauth", "/api/users/hello/oauth").permitAll()  // aggiunto hello/oauth,
+                        .requestMatchers("/").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
+
                         // oppure più semplice per test: .requestMatchers("/api/users/**").permitAll()
                         .anyRequest().authenticated()
                 )
@@ -139,7 +142,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:4200", "http://localhost:8080", "http://localhost"));
+        configuration.setAllowedOrigins(List.of("http://localhost:4200", "http://localhost:8080", "http://localhost", "http://192.168.0.107:4200"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
